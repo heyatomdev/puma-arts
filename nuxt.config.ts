@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   modules: ['@nuxtjs/i18n', '@nuxtjs/robots', '@nuxtjs/sitemap'],
   css: ['@fontsource-variable/archivo/wdth.css', '~/assets/main.css'],
-  site: { url: 'https://studioartepuma.it' },
+  site: { url: 'https://studioartepuma.it', name: 'Studio Arte Puma' },
   // Sitemaps are written at build time from the prerendered pages, not served by a runtime handler.
   sitemap: { zeroRuntime: true },
   i18n: {
