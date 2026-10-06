@@ -19,8 +19,16 @@ useSeoMeta({
 const total = artworks.length
 const pad = (i: number) => String(i).padStart(2, '0')
 
-// Without the walk (reduced motion) the wall is a plain scroller; overlay scrollbars give mouse users
-// nothing to grab, so the poster carries two buttons that move it by most of a screen.
+// The walk needs a mouse or trackpad: on touch a vertical swipe moving the wall sideways fights the thumb,
+// and a flick skips past several works. Elsewhere the wall is a plain snap scroller you swipe through.
+const WALK = `${MOTION_OK} and (pointer: fine)`
+const walking = ref(false)
+
+// Without the walk, the poster says which sheet sits in the middle of the wall ("2 / 5").
+const at = reactive<Record<string, number>>({})
+
+// Overlay scrollbars give mouse users nothing to grab, so the poster carries two arrows that move
+// the wall by most of a screen.
 function slide(e: MouseEvent, dir: 1 | -1) {
   const wall = (e.currentTarget as HTMLElement).closest('.stage-in')!.querySelector<HTMLElement>('.wall')!
   wall.scrollBy({ left: dir * wall.clientWidth * 0.8 })
@@ -31,6 +39,10 @@ function syncNav(wall: HTMLElement) {
   if (!back || !fwd) return
   back.disabled = wall.scrollLeft <= 1
   fwd.disabled = wall.scrollLeft >= wall.scrollWidth - wall.clientWidth - 1
+  const mid = wall.scrollLeft + wall.clientWidth / 2
+  const sheets = [...wall.querySelectorAll<HTMLElement>('.sheet')]
+  const dists = sheets.map(s => Math.abs(s.offsetLeft + s.offsetWidth / 2 - mid))
+  at[wall.closest('.stage')!.id] = dists.indexOf(Math.min(...dists)) + 1
 }
 onMounted(() => {
   const walls = [...document.querySelectorAll<HTMLElement>('.wall')]
@@ -46,7 +58,10 @@ const root = ref<HTMLElement>()
 useMotion(root, (mm, el) => {
   mm.add(MOTION_OK, () => {
     pasteIn(el.querySelector('.bill')!, el.querySelector('.bill-name')!)
+  })
 
+  mm.add(WALK, () => {
+    walking.value = true
     // Each stage is a wall: vertical scroll walks along it, then the next poster is pasted over it.
     const walk = el.querySelector<HTMLElement>('#percorso')!
     walk.classList.add('is-walk')
@@ -81,6 +96,7 @@ useMotion(root, (mm, el) => {
       offs.push(() => wall.removeEventListener('focusin', onFocus))
     }
     return () => {
+      walking.value = false
       walk.classList.remove('is-walk')
       offs.forEach(off => off())
     }
@@ -129,10 +145,13 @@ useMotion(root, (mm, el) => {
           <header class="stage-head">
             <h2 :id="`stage-${stage.id}`" class="stage-title">{{ t(`stages.${stage.id}.title`) }}</h2>
             <p class="stage-line">{{ t(`stages.${stage.id}.line`) }}</p>
-            <p class="stage-count">{{ t('count', stage.works.length) }}</p>
+            <p class="stage-count">
+              <template v-if="!walking && at[stage.id] && stage.works.length > 1">{{ at[stage.id] }} / {{ stage.works.length }}</template>
+              <template v-else>{{ t('count', stage.works.length) }}</template>
+            </p>
             <p v-if="stage.works.length > 1" class="wall-nav">
-              <button type="button" disabled @click="slide($event, -1)">{{ t('home.back') }}</button>
-              <button type="button" @click="slide($event, 1)">{{ t('home.forward') }}</button>
+              <button type="button" :aria-label="t('home.back')" disabled @click="slide($event, -1)"><span aria-hidden="true">←</span></button>
+              <button type="button" :aria-label="t('home.forward')" @click="slide($event, 1)"><span aria-hidden="true">→</span></button>
             </p>
           </header>
 
@@ -140,7 +159,9 @@ useMotion(root, (mm, el) => {
             <ol class="sheets">
               <li v-for="w in stage.works" :key="w.slug" class="sheet">
                 <NuxtLink :to="localePath(`/opere/${w.slug}`)" class="sheet-link">
+                  <!-- loading first: on a client-side visit Vue sets attributes in order, and a src set before it starts the fetch. -->
                   <img
+                    loading="lazy"
                     :src="img(w.image, 800)"
                     :srcset="srcset(w.image, [400, 600, 800, 1200])"
                     sizes="(min-width: 900px) 40vw, 80vw"
@@ -148,7 +169,6 @@ useMotion(root, (mm, el) => {
                     :height="w.px[1]"
                     :alt="artworkAlt(w, locale)"
                     :style="{ viewTransitionName: `art-${w.slug}` }"
-                    loading="lazy"
                   >
                   <span class="sheet-meta">
                     <span class="sheet-n">{{ pad(w.n) }}/{{ total }}</span>
@@ -269,12 +289,26 @@ useMotion(root, (mm, el) => {
 .wall-nav button {
   font: inherit;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 1.25rem;
+  line-height: 1;
   color: inherit;
   background: none;
   border: 2px solid currentColor;
-  padding: 0.35rem 0.8rem;
+  /* A thumb-sized target. */
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   cursor: pointer;
+}
+.wall-nav span { display: inline-block; }
+/* Until the wall has moved, the forward arrow nudges right: there is more this way. */
+@media (prefers-reduced-motion: no-preference) {
+  .wall-nav button:first-child:disabled + button:not(:disabled) span {
+    animation: nudge 1.6s var(--ease-out) infinite;
+  }
+}
+@keyframes nudge {
+  0%, 40%, 100% { transform: translateX(0); }
+  20% { transform: translateX(0.35rem); }
 }
 .wall-nav button:hover:not(:disabled) { background: var(--on-stage); color: var(--stage-ink); }
 .wall-nav button:disabled { opacity: 0.4; cursor: default; }
@@ -323,7 +357,8 @@ useMotion(root, (mm, el) => {
   height: auto;
   /* Leave room for the caption under it. */
   max-height: calc(100% - 5.3rem);
-  max-width: 82vw;
+  /* Narrower than the screen, so the next sheet always shows at the edge. */
+  max-width: 75vw;
 }
 .sheet-link:hover .sheet-title,
 .sheet-link:focus-visible .sheet-title { text-decoration: underline; text-decoration-thickness: 2px; }
@@ -354,5 +389,13 @@ useMotion(root, (mm, el) => {
 .is-walk .stage + .stage { margin-top: -100svh; }
 .is-walk .stage-in { position: sticky; top: 0; }
 .is-walk .wall { overflow: clip; }
+
+/* On touch the wall is swiped, not walked, but the next poster is still pasted over the last one. */
+@media (prefers-reduced-motion: no-preference) and (pointer: coarse) {
+  .stage { height: 200svh; }
+  .stage:last-child { height: 100svh; }
+  .stage + .stage { margin-top: -100svh; }
+  .stage-in { position: sticky; top: 0; }
+}
 
 </style>
