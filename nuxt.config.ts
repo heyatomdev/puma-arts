@@ -20,6 +20,12 @@ export default defineNuxtConfig({
     // First visit to / follows the browser; the choice sticks in a cookie. Unsupported or missing language (crawlers) stays Italian.
     detectBrowserLanguage: { useCookie: true, cookieKey: 'lang', redirectOn: 'root', fallbackLocale: 'it' },
   },
+  // GSAP in its own chunk: otherwise it shares one with SiteClose and ships to artwork pages, which never animate.
+  vite: {
+    $client: {
+      build: { rollupOptions: { output: { manualChunks: id => id.includes('/node_modules/gsap/') ? 'gsap' : undefined } } },
+    },
+  },
   // An artwork grows from the wall into its own page.
   experimental: { viewTransition: true },
   runtimeConfig: {
