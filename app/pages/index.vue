@@ -159,7 +159,9 @@ useMotion(root, (mm, el) => {
             <ol class="sheets">
               <li v-for="w in stage.works" :key="w.slug" class="sheet">
                 <NuxtLink :to="localePath(`/opere/${w.slug}`)" class="sheet-link">
+                  <!-- loading first: on a client-side visit Vue sets attributes in order, and a src set before it starts the fetch. -->
                   <img
+                    loading="lazy"
                     :src="img(w.image, 800)"
                     :srcset="srcset(w.image, [400, 600, 800, 1200])"
                     sizes="(min-width: 900px) 40vw, 80vw"
@@ -167,7 +169,6 @@ useMotion(root, (mm, el) => {
                     :height="w.px[1]"
                     :alt="artworkAlt(w, locale)"
                     :style="{ viewTransitionName: `art-${w.slug}` }"
-                    loading="lazy"
                   >
                   <span class="sheet-meta">
                     <span class="sheet-n">{{ pad(w.n) }}/{{ total }}</span>
