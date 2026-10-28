@@ -3,11 +3,13 @@ import { artworks } from './app/data/artworks'
 export default defineNuxtConfig({
   compatibilityDate: '2026-09-01',
   devtools: { enabled: false },
-  modules: ['@nuxtjs/i18n', '@nuxtjs/robots', '@nuxtjs/sitemap'],
+  modules: ['@nuxtjs/i18n', '@nuxtjs/robots', '@nuxtjs/sitemap', '@heyatom/client/nuxt'],
   css: ['@fontsource-variable/archivo/wdth.css', '~/assets/main.css'],
   site: { url: 'https://studioartepuma.it', name: 'Studio Arte Puma' },
   // Sitemaps are written at build time from the prerendered pages, not served by a runtime handler.
   sitemap: { zeroRuntime: true },
+  // Self-hosted Umami, proxied through this server at /_u.
+  umami: { websiteId: '90c2024f-0beb-4b28-8030-1e9063ac3d56', domains: ['studioartepuma.it', 'www.studioartepuma.it'] },
   i18n: {
     locales: [
       { code: 'it', language: 'it-IT', name: 'Italiano', file: 'it.json' },
