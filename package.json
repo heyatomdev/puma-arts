@@ -1,6 +1,6 @@
 {
   "name": "puma-arts",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "description": "Sito di Studio Arte Puma. Nuxt 4.",
   "author": "Andrea Tombolato <andreacw96@gmail.com> (https://github.com/andreacw5)",
@@ -15,12 +15,13 @@
   },
   "dependencies": {
     "@fontsource-variable/archivo": "^5.3.0",
+    "@heyatom/client": "^1.1.0",
     "@nuxtjs/i18n": "^10.6.0",
     "@nuxtjs/robots": "^6.2.4",
-    "@nuxtjs/sitemap": "^8.6.1",
+    "@nuxtjs/sitemap": "^8.6.2",
     "gsap": "^3.15.0",
-    "nuxt": "^4.5.2",
-    "vue": "^3.5.43",
-    "vue-router": "^5.3.1"
+    "nuxt": "^4.6.3",
+    "vue": "^3.5.44",
+    "vue-router": "^5.4.0"
   }
 }
