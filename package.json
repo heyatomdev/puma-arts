@@ -20,7 +20,7 @@
     "@nuxtjs/robots": "^6.2.4",
     "@nuxtjs/sitemap": "^8.6.2",
     "gsap": "^3.15.0",
-    "nuxt": "^4.6.3",
+    "nuxt": "^4.6.4",
     "vue": "^3.5.44",
     "vue-router": "^5.4.0"
   }
